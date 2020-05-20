@@ -1,0 +1,340 @@
+{
+	"fileTypes": [
+        "qss"
+    ],
+    "name": "qscript",
+    "patterns": [
+        {
+            "include": "#expression"
+        }
+    ],
+    "repository": {
+        "array-literal": {
+            "begin": "\\(",
+            "beginCaptures": {
+                "0": {
+                    "name": "meta.brace.square.qscript"
+                }
+            },
+            "end": "\\)",
+            "endCaptures": {
+                "0": {
+                    "name": "meta.brace.square.qscript"
+                }
+            },
+            "name": "meta.array.literal.qscript",
+            "patterns": [
+                {
+                    "include": "#expression"
+                }
+            ]
+        },
+        "assignment-operator": {
+            "match": "=",
+            "name": "keyword.operator.assignment.qscript"
+        },
+        "block": {
+            "begin": "\\{",
+            "beginCaptures": {
+                "0": {
+                    "name": "meta.brace.curly.qscript"
+                }
+            },
+            "end": "\\}",
+            "endCaptures": {
+                "0": {
+                    "name": "meta.brace.curly.qscript"
+                }
+            },
+            "name": "meta.block.qscript",
+            "patterns": [
+                {
+                    "include": "#expression"
+                },
+                {
+                    "include": "#object-member"
+                }
+            ]
+        },
+        "boolean-literal": {
+            "match": "(\\s*)(false|true)\\b",
+            "name": "constant.language.boolean.qscript"
+        },
+        "comment": {
+            "name": "comment.qscript",
+            "patterns": [
+                {
+                    "include": "#comment-block"
+                },
+                {
+                    "include": "#comment-line"
+                }
+            ]
+        },
+        "comment-block": {
+            "begin": "/\\*",
+            "end": "\\*/",
+            "name": "comment.block.qscript"
+        },
+        "comment-line": {
+            "match": "(//).*$\\n?",
+            "name": "comment.line.qscript"
+        },
+        "comparison-operator": {
+            "match": "==|!=|>|<|>=|<=",
+            "name": "keyword.operator.comparison.qscript"
+        },
+        "condition-operator": {
+            "match": "!|&&|\\|\\|",
+            "name": "keyword.operator.condition.qscript"
+        },
+        "control-statement": {
+            "match": "\\s*(?i)(if|else|do|while|for|return)\\b",
+            "name": "keyword.control.qscript"
+		},
+		"var-expr": {
+			"match": "\\s*(?i)(var|const)\\b",
+            "name": "keyword.other.qscript"
+		},
+		"types": {
+			"match": "\\s*(?i)(num|string|auto|bool)\\b",
+            "name": "entity.name.type.qscript"
+		},
+		"import": {
+			"match": "\\s*(?i)(import)\\b",
+            "name": "keyword.operator.expression.import.qscript"
+		},
+		"arrow": {
+			"match": "->",
+            "name": "keyword.operator.logical.qscript"
+		},
+        "decl-block": {
+            "begin": "\\{",
+            "beginCaptures": {
+                "0": {
+                    "name": "meta.brace.curly.qscript"
+                }
+            },
+            "end": "\\}",
+            "endCaptures": {
+                "0": {
+                    "name": "meta.brace.curly.qscript"
+                }
+            },
+            "name": "meta.decl.block.qscript",
+            "patterns": [
+                {
+                    "include": "#expression"
+                }
+            ]
+        },
+        "Array-statement": {
+            "match": "\\s*(?i)Array\\b",
+            "name": "variable.language.array.qscript"
+		},
+		"Table-statement": {
+            "match": "\\s*(?i)Table\\b",
+            "name": "variable.language.table.qscript"
+        },
+        "expression": {
+            "name": "meta.expression.qscript",
+            "patterns": [
+				{
+                    "include": "#var-expr"
+				},
+				{
+                    "include": "#types"
+				},
+				{
+                    "include": "#arrow"
+				},
+				{
+                    "include": "#import"
+                },
+                {
+                    "include": "#string"
+                },
+                {
+                    "include": "#comment"
+                },
+                {
+                    "include": "#block"
+                },
+                {
+                    "include": "#comparison-operator"
+                },
+                {
+                    "include": "#condition-operator"
+                },
+                {
+                    "include": "#manipulative-operator"
+                },
+                {
+                    "include": "#assignment-operator"
+                },
+                {
+                    "include": "#control-statement"
+                },
+                {
+                    "include": "#statements"
+				},
+				{
+                    "include": "#literal"
+                }
+            ]
+        },
+        "statements": {
+            "name": "meta.expression.qscript",
+            "patterns": [
+                {
+                    "include": "#Array-statement"
+                },
+                {
+                    "include": "#Table-statement"
+				},
+				{
+                    "include": "#decl-block"
+                }
+            ]
+        },
+        "literal": {
+            "name": "literal.qscript",
+            "patterns": [
+                {
+                    "include": "#numeric-literal"
+                },
+                {
+                    "include": "#boolean-literal"
+                },
+                {
+                    "include": "#null-literal"
+                },
+                {
+                    "include": "#array-literal"
+                }
+            ]
+        },
+        "manipulative-operator": {
+            "match": "\\*|\\/|\\-|\\+|\\%|\\*\\*",
+            "name": "keyword.operator.manipulative.qscript"
+        },
+        "null-literal": {
+            "match": "\\b(null)\\b",
+            "name": "constant.language.null.qscript"
+        },
+        "numeric-literal": {
+			"patterns": [
+				{
+					"name": "constant.numeric.hex.ts",
+					"match": "\\b(?<!\\$)0(?:x|X)[0-9a-fA-F][0-9a-fA-F_]*(n)?\\b(?!\\$)",
+					"captures": {
+						"1": {
+							"name": "storage.type.numeric.bigint.ts"
+						}
+					}
+				},
+				{
+					"name": "constant.numeric.binary.ts",
+					"match": "\\b(?<!\\$)0(?:b|B)[01][01_]*(n)?\\b(?!\\$)",
+					"captures": {
+						"1": {
+							"name": "storage.type.numeric.bigint.ts"
+						}
+					}
+				},
+				{
+					"name": "constant.numeric.octal.ts",
+					"match": "\\b(?<!\\$)0(?:o|O)?[0-7][0-7_]*(n)?\\b(?!\\$)",
+					"captures": {
+						"1": {
+							"name": "storage.type.numeric.bigint.ts"
+						}
+					}
+				},
+				{
+					"match": "(?x)\n(?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*(n)?\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*(n)?\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)(n)?\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*(n)?\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*(n)?\\b(?!\\.))                                 # 1\n)(?!\\$)",
+					"captures": {
+						"0": {
+							"name": "constant.numeric.decimal.ts"
+						},
+						"1": {
+							"name": "meta.delimiter.decimal.period.ts"
+						},
+						"2": {
+							"name": "storage.type.numeric.bigint.ts"
+						},
+						"3": {
+							"name": "meta.delimiter.decimal.period.ts"
+						},
+						"4": {
+							"name": "storage.type.numeric.bigint.ts"
+						},
+						"5": {
+							"name": "meta.delimiter.decimal.period.ts"
+						},
+						"6": {
+							"name": "storage.type.numeric.bigint.ts"
+						},
+						"7": {
+							"name": "storage.type.numeric.bigint.ts"
+						},
+						"8": {
+							"name": "meta.delimiter.decimal.period.ts"
+						},
+						"9": {
+							"name": "storage.type.numeric.bigint.ts"
+						},
+						"10": {
+							"name": "meta.delimiter.decimal.period.ts"
+						},
+						"11": {
+							"name": "storage.type.numeric.bigint.ts"
+						},
+						"12": {
+							"name": "meta.delimiter.decimal.period.ts"
+						},
+						"13": {
+							"name": "storage.type.numeric.bigint.ts"
+						},
+						"14": {
+							"name": "storage.type.numeric.bigint.ts"
+						}
+					}
+				}
+			]
+        },
+        "": {
+            "begin": "\\[",
+            "beginCaptures": {
+                "0": {
+                    "name": "meta.brace.paren.qscript"
+                }
+            },
+            "end": "\\]",
+            "endCaptures": {
+                "0": {
+                    "name": "meta.brace.paren.qscript"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "#expression"
+                }
+            ]
+        },
+        "string-double": {
+            "begin": "\"",
+            "end": "\"",
+            "name": "string.double.qscript"
+        },
+        "string": {
+            "name": "string.qscript",
+            "patterns": [
+                {
+                    "include": "#string-double"
+                }
+            ]
+		}
+    },
+    "scopeName": "source.qscript"
+}
