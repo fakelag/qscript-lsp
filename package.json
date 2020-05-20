@@ -1,0 +1,74 @@
+{
+	"name": "qscript-lsp",
+	"description": "Q-Script Language Server",
+	"version": "1.0.0",
+	"categories": [
+		"Programming Languages"
+	],
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"activationEvents": [
+		"onLanguage:qscript"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Q-Script Language",
+			"properties": {
+				"languageServerExample.maxNumberOfProblems": {
+					"scope": "resource",
+					"type": "number",
+					"default": 100,
+					"description": "Controls the maximum number of problems produced by the server."
+				},
+				"languageServerExample.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		},
+		"languages": [
+			{
+				"id": "qscript",
+				"extensions": [
+					".qss"
+				],
+				"aliases": [
+					"Q-Script"
+				]
+			}
+		],
+		"grammars": [
+			{
+				"language": "qscript",
+				"scopeName": "source.qscript",
+				"path": "./qscript.tmGrammar.json"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+	},
+	"devDependencies": {
+		"@types/mocha": "^5.2.7",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/parser": "^2.34.0",
+		"eslint": "^6.4.0",
+		"js-yaml": "^3.13.1",
+		"mocha": "^6.2.2",
+		"typescript": "^3.8.3"
+	},
+	"dependencies": {}
+}

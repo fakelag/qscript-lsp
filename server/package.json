@@ -1,0 +1,13 @@
+{
+	"name": "qscript-lang-srv",
+	"description": "Q-Script Language Server",
+	"version": "1.0.0",
+	"engines": {
+		"node": "*"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^6.1.1",
+		"vscode-languageserver-textdocument": "^1.0.1"
+	},
+	"scripts": {}
+}
