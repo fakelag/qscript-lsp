@@ -20,6 +20,48 @@ import {
 } from 'vscode-languageserver-textdocument';
 import { spawn, ChildProcess } from 'child_process';
 
+type ModuleFunctionArg = {
+	name: string;
+	type: string;
+	returnType: string;
+	isVarArgs: boolean;
+}
+
+type ModuleFunction = {
+	name: string;
+	returnType: string;
+	args: ModuleFunctionArg[];
+};
+
+type JmpAttributes = {
+	jumpTo?: number;
+	relative?: number;
+	dir?: -1 | 1;
+}
+
+type ClosureAttributes = {
+	upvalueIndex?: number;
+	isLocal?: boolean;
+}
+
+type OpcodeAttributes = JmpAttributes & ClosureAttributes & {
+	type: string;
+}
+
+type Disassembly = {
+	name: string;
+	opcodes: Array<{
+		full: string;
+		address: string;
+		lineNr: number;
+		colNr: number;
+		token: string;
+		type: 'SIMPLE' | 'LONG' | 'SHORT';
+		size: number;
+		attributes?: OpcodeAttributes[];
+	}>;
+}
+
 type LangServerResult = {
 	status: 'OK' | 'failed';
 	errors: Array<{
@@ -27,15 +69,18 @@ type LangServerResult = {
 		colNr: number;
 		token: string;
 		desc: string;
+		generic?: boolean;
 	}>;
 	symbols: Array<{
-		context: 'Global' | 'Local' | 'Argument' | 'Upvalue';
+		context: 'Global' | 'Local' | 'Argument' | 'Upvalue' | 'Import';
 		lineNr: number;
 		colNr: number;
 		name: string;
 		isConst: boolean;
 		type: string;
 		returnType: string;
+		moduleFunctions: ModuleFunction[];
+		disassembly?: Disassembly; // if type === function
 	}>;
 }
 
@@ -107,6 +152,11 @@ documents.onDidChangeContent(async change => {
 				const serverJson: LangServerResult = JSON.parse(serverResult);
 
 				for (const error of serverJson.errors) {
+					if (error.generic) {
+						console.error('Unhandled error: ', error);
+						continue;
+					}
+
 					const diagnostic: Diagnostic = {
 						severity: DiagnosticSeverity.Warning,
 						range: {
@@ -195,11 +245,10 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 
 			const serverResult = buffer.join('');
 			const { position } = textDocumentPositionParams;
-			let symbol = null;
+			let symbol: LangServerResult['symbols'][0] | null = null;
 
 			try {
 				const serverJson: LangServerResult = JSON.parse(serverResult);
-
 				for (const variable of serverJson.symbols) {
 					if (position.line !== variable.lineNr - 1) {
 						continue;
@@ -207,25 +256,48 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 
 					if (position.character >= variable.colNr && position.character <= variable.colNr + variable.name.length) {
 						symbol = variable;
-						break;
+						// break;
 					}
 				}
+
 			} catch (err) {
 				reject(err);
 			}
 
-			if (symbol) {
-				const contents = `### ${symbol.name}
+			let contents = null;
+
+			const printArg = (f: ModuleFunction, a: ModuleFunctionArg, ai: number) =>
+				(a.isVarArgs ? '...' : `${a.type} ${a.name} ${a.type === 'function' ? `/* -> ${a.returnType} */` : ''} ${(ai < f.args.length - 1) ? ',' : '' }`);
+
+			const printFn = (f: ModuleFunction) => 
+				(`const ${f.name} = (${f.args.map((a, ai) => printArg(f, a, ai))}) -> ${f.returnType} { /* <native code> */ }`);
+
+			if (symbol && symbol.context === 'Import') {
+				contents = `### ${symbol.name}
+\`\`\`qscript
+// Imported functions
+${symbol.moduleFunctions.map(printFn).join('\n')}
+\`\`\`
+`;
+			} else if (symbol) {
+				contents = `### ${symbol.name}
 \`\`\`qscript
 ${symbol.isConst ? 'const' : 'var'} ${symbol.name}; // ${symbol.type}, ${symbol.context} ${symbol.type === 'function' ? `(returnType=${symbol.returnType})` : ''}
 \`\`\`
 `;
-				resolve({
-					contents,
-				} as Hover);
-			} else {
-				resolve(null);
 			}
+
+			// Include a diassembly view?
+			if (symbol && symbol.disassembly) {
+				contents += `
+\`\`\`bash
+=== ${symbol.disassembly.name} ===
+${symbol.disassembly.opcodes.map((o) => (`${o.address.padStart(4, '0')} ${o.full.padEnd(25, ' ')} ${`[${o.lineNr}, ${o.colNr}, "${o.token}"`}]`)).join('\n')}
+\`\`\`
+				`;
+			}
+
+			resolve(contents ? { contents } : null);
 		});
 
 		serverProcess.on('close', () => documentHoverServers.delete(textDocument.uri));
