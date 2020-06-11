@@ -49,6 +49,7 @@ type OpcodeAttributes = JmpAttributes & ClosureAttributes & {
 }
 
 type Disassembly = {
+	id: number;
 	name: string;
 	opcodes: Array<{
 		full: string;
@@ -80,8 +81,9 @@ type LangServerResult = {
 		type: string;
 		returnType: string;
 		moduleFunctions: ModuleFunction[];
-		disassembly?: Disassembly; // if type === function
+		disassemblyId?: number; // if type === function
 	}>;
+	disasm: Disassembly[];
 }
 
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -246,17 +248,20 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 			const serverResult = buffer.join('');
 			const { position } = textDocumentPositionParams;
 			let symbol: LangServerResult['symbols'][0] | null = null;
+			let serverJson: LangServerResult | null = null;
+
+			console.log(`Received hover update of ${serverResult.length} bytes`);
 
 			try {
-				const serverJson: LangServerResult = JSON.parse(serverResult);
-				for (const variable of serverJson.symbols) {
+				serverJson = JSON.parse(serverResult);
+				for (const variable of serverJson!.symbols) {
 					if (position.line !== variable.lineNr - 1) {
 						continue;
 					}
 
 					if (position.character >= variable.colNr && position.character <= variable.colNr + variable.name.length) {
 						symbol = variable;
-						// break;
+						break;
 					}
 				}
 
@@ -274,27 +279,35 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 
 			if (symbol && symbol.context === 'Import') {
 				contents = `### ${symbol.name}
+---
 \`\`\`qscript
 // Imported functions
 ${symbol.moduleFunctions.map(printFn).join('\n')}
 \`\`\`
 `;
 			} else if (symbol) {
+				const types = symbol.type === 'unknown' ? ['', 'unknown, '] : [`${symbol.type} `, ''];
+				const varType = symbol.isConst ? 'const' : 'var';
+
 				contents = `### ${symbol.name}
+---
 \`\`\`qscript
-${symbol.isConst ? 'const' : 'var'} ${symbol.name}; // ${symbol.type}, ${symbol.context} ${symbol.type === 'function' ? `(returnType=${symbol.returnType})` : ''}
+${varType} ${types[0]}${symbol.name}; // ${types[1]}${symbol.context} ${symbol.type === 'function' ? `(returnType=${symbol.returnType})` : ''}
 \`\`\`
 `;
 			}
 
 			// Include a diassembly view?
-			if (symbol && symbol.disassembly) {
-				contents += `
+			if (symbol && symbol.disassemblyId) {
+				const disassembly = serverJson!.disasm.find((disasm) => disasm.id === symbol!.disassemblyId);
+				if (disassembly) {
+					contents += `---
 \`\`\`bash
-=== ${symbol.disassembly.name} ===
-${symbol.disassembly.opcodes.map((o) => (`${o.address.padStart(4, '0')} ${o.full.padEnd(25, ' ')} ${`[${o.lineNr}, ${o.colNr}, "${o.token}"`}]`)).join('\n')}
+=== ${disassembly.name} ===
+${disassembly.opcodes.map((o) => (`${o.address.padStart(4, '0')} ${o.full.padEnd(25, ' ')} ${`[${o.lineNr}, ${o.colNr}, "${o.token}"`}]`)).join('\n')}
 \`\`\`
-				`;
+					`;
+				}
 			}
 
 			resolve(contents ? { contents } : null);
