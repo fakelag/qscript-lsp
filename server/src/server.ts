@@ -1,3 +1,5 @@
+const dotenv = require('dotenv');
+import * as path from 'path';
 import {
 	createConnection,
 	TextDocuments,
@@ -11,8 +13,6 @@ import {
 	TextDocumentSyncKind,
 	InitializeResult,
 	Position,
-	Hover,
-	Range,
 } from 'vscode-languageserver';
 
 import {
@@ -85,6 +85,12 @@ type LangServerResult = {
 	}>;
 	disasm: Disassembly[];
 }
+const dotEnvPath = path.join(__dirname, '../../.env');
+dotenv.config({ path: dotEnvPath });
+
+const { LANG_SRV_PATH = './LangSrv.o' } = process.env;
+
+const spawnLangServer = (args: string[]) => spawn(LANG_SRV_PATH, args);
 
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const connection = createConnection(ProposedFeatures.all);
@@ -134,7 +140,7 @@ documents.onDidChangeContent(async change => {
 	const text = textDocument.getText();
 	const buffer: any[] = [];
 
-	const serverProcess = spawn('F:/Projects/qscript-language/Debug/LangSrv.exe', ['--exit']);
+	const serverProcess = spawnLangServer(['--exit']);
 
 	if (serverProcess.pid) {
 		serverProcess.stdout.on('data', (data) => {
@@ -168,7 +174,7 @@ documents.onDidChangeContent(async change => {
 						message: error.desc,
 						source: 'Q-Script'
 					};
-	
+
 					diagnostics.push(diagnostic);
 				}
 			} catch (err) {
@@ -233,7 +239,7 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 	const text = textDocument.getText();
 	const buffer: any[] = [];
 
-	const serverProcess = spawn('F:/Projects/qscript-language/Debug/LangSrv.exe', ['--exit', '--listSymbols']);
+	const serverProcess = spawnLangServer(['--exit', '--listSymbols']);
 
 	if (serverProcess.pid) {
 		serverProcess.stdout.on('data', (data) => {
@@ -274,7 +280,7 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 			const printArg = (f: ModuleFunction, a: ModuleFunctionArg, ai: number) =>
 				(a.isVarArgs ? '...' : `${a.type} ${a.name} ${a.type === 'function' ? `/* -> ${a.returnType} */` : ''} ${(ai < f.args.length - 1) ? ',' : '' }`);
 
-			const printFn = (f: ModuleFunction) => 
+			const printFn = (f: ModuleFunction) =>
 				(`const ${f.name} = (${f.args.map((a, ai) => printArg(f, a, ai))}) -> ${f.returnType} { /* <native code> */ }`);
 
 			if (symbol && symbol.context === 'Import') {
