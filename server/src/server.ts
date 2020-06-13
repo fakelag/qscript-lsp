@@ -63,6 +63,24 @@ type Disassembly = {
 	}>;
 }
 
+type Argument = {
+	name: string;
+	type: string;
+}
+
+type Symbol = {
+	context: 'Global' | 'Local' | 'Argument' | 'Upvalue' | 'Import';
+	lineNr: number;
+	colNr: number;
+	name: string;
+	isConst: boolean;
+	type: string;
+	returnType: string;
+	moduleFunctions: ModuleFunction[];
+	disassemblyId?: number; // if type === function
+	args?: Argument[]; // if type === function
+}
+
 type LangServerResult = {
 	status: 'OK' | 'failed';
 	errors: Array<{
@@ -72,17 +90,7 @@ type LangServerResult = {
 		desc: string;
 		generic?: boolean;
 	}>;
-	symbols: Array<{
-		context: 'Global' | 'Local' | 'Argument' | 'Upvalue' | 'Import';
-		lineNr: number;
-		colNr: number;
-		name: string;
-		isConst: boolean;
-		type: string;
-		returnType: string;
-		moduleFunctions: ModuleFunction[];
-		disassemblyId?: number; // if type === function
-	}>;
+	symbols: Symbol[];
 	disasm: Disassembly[];
 }
 const dotEnvPath = path.join(__dirname, '../../.env');
@@ -260,6 +268,13 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 
 			try {
 				serverJson = JSON.parse(serverResult);
+
+				if (serverJson!.status !== 'OK') {
+					console.error('LangSrv exception: ', serverJson!.errors);
+					resolve(null);
+					return;
+				}
+
 				for (const variable of serverJson!.symbols) {
 					if (position.line !== variable.lineNr - 1) {
 						continue;
@@ -277,13 +292,13 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 
 			let contents = null;
 
-			const printArg = (f: ModuleFunction, a: ModuleFunctionArg, ai: number) =>
-				(a.isVarArgs ? '...' : `${a.type} ${a.name} ${a.type === 'function' ? `/* -> ${a.returnType} */` : ''} ${(ai < f.args.length - 1) ? ',' : '' }`);
-
-			const printFn = (f: ModuleFunction) =>
-				(`const ${f.name} = (${f.args.map((a, ai) => printArg(f, a, ai))}) -> ${f.returnType} { /* <native code> */ }`);
-
 			if (symbol && symbol.context === 'Import') {
+				const printArg = (f: ModuleFunction, a: ModuleFunctionArg, ai: number) =>
+					(a.isVarArgs ? '...' : `${a.type} ${a.name}${a.type === 'function' ? `/* -> ${a.returnType} */` : ''}${(ai < f.args.length - 1) ? ',' : '' }`);
+
+				const printFn = (f: ModuleFunction) =>
+					(`const ${f.name} = (${f.args.map((a, ai) => printArg(f, a, ai))}) -> ${f.returnType} { /* <native code> */ }`);
+
 				contents = `### ${symbol.name}
 ---
 \`\`\`qscript
@@ -295,12 +310,26 @@ ${symbol.moduleFunctions.map(printFn).join('\n')}
 				const types = symbol.type === 'unknown' ? ['', 'unknown, '] : [`${symbol.type} `, ''];
 				const varType = symbol.isConst ? 'const' : 'var';
 
-				contents = `### ${symbol.name}
----
+				contents = `### ${symbol.name}\n`;
+
+				if (symbol.type === 'function' && symbol.args !== undefined) {
+					const printArg = (a: Argument, ai: number, newLine: boolean) => (`${ai > 0 && newLine ? '\n\t' : ''}${a.type} ${a.name}`);
+
+					const printFn = (f: Symbol) =>
+						(`const ${f.name} = (${f.args!.map((a, ai) => printArg(a, ai, f.args!.length > 4)).join(', ')}) -> ${f.returnType} {}; // ${f.context}`);
+
+					contents += `
 \`\`\`qscript
-${varType} ${types[0]}${symbol.name}; // ${types[1]}${symbol.context} ${symbol.type === 'function' ? `(returnType=${symbol.returnType})` : ''}
+${printFn(symbol)}
 \`\`\`
 `;
+				} else {
+					contents += `
+\`\`\`qscript
+${varType} ${types[0]}${symbol.name}; // ${types[1]}${symbol.context}
+\`\`\`
+`;
+				}
 			}
 
 			// Include a diassembly view?
