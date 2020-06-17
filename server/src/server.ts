@@ -268,6 +268,7 @@ connection.onHover((textDocumentPositionParams, token) => (new Promise((resolve,
 
 			try {
 				serverJson = JSON.parse(serverResult);
+				// console.log(serverJson);
 
 				if (serverJson!.status !== 'OK') {
 					console.error('LangSrv exception: ', serverJson!.errors);
@@ -313,7 +314,7 @@ ${symbol.moduleFunctions.map(printFn).join('\n')}
 				contents = `### ${symbol.name}\n`;
 
 				if (symbol.type === 'function' && symbol.args !== undefined) {
-					const printArg = (a: Argument, ai: number, newLine: boolean) => (`${ai > 0 && newLine ? '\n\t' : ''}${a.type} ${a.name}`);
+					const printArg = (a: Argument, ai: number, newLine: boolean) => (`${ai > 0 && newLine ? '\n\t' : ''}${a.type === 'unknown' ? '' : `${a.type} `}${a.name}`);
 
 					const printFn = (f: Symbol) =>
 						(`const ${f.name} = (${f.args!.map((a, ai) => printArg(a, ai, f.args!.length > 4)).join(', ')}) -> ${f.returnType} {}; // ${f.context}`);
