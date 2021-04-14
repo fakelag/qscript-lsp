@@ -6,8 +6,8 @@ Visual studio code language extension for [QScript language](https://github.com/
 
 Highlight and display an error message while developing
 
-![Error reporting 1](https://github.com/fakelag/qscript-lsp/blob/master/media/01.png)
-![Error reporting 2](https://github.com/fakelag/qscript-lsp/blob/master/media/02.png)
+![Error reporting 1](https://github.com/fakelag/qscript-lsp/blob/master/media/01.PNG)
+![Error reporting 2](https://github.com/fakelag/qscript-lsp/blob/master/media/02.PNG)
 
 ## Syntax highlighting
 
@@ -18,10 +18,10 @@ Syntax highlighting is defined with tmgrammar in [qscript.tmGrammar.json](https:
 
 Library content view when hovering imports
 
-![Function disassembly](https://github.com/fakelag/qscript-lsp/blob/master/media/04.png)
+![Function disassembly](https://github.com/fakelag/qscript-lsp/blob/master/media/04.gif)
 
 ## Function disassembly
 
 Disassembly view when hovering functions
 
-![Function disassembly](https://github.com/fakelag/qscript-lsp/blob/master/media/03.png)
+![Function disassembly](https://github.com/fakelag/qscript-lsp/blob/master/media/03.gif)
